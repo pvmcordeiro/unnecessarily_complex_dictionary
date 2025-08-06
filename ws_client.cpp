@@ -21,6 +21,7 @@ int main(int argc, char **argv)
         }
         std::string host = argv[1];
         std::string port = argv[2];
+        std::string word;
 
         // The io_context is required for all I/O
         net::io_context ioc;
@@ -38,15 +39,24 @@ int main(int argc, char **argv)
         // Perform the WebSocket handshake
         ws.handshake(host, "/");
 
-        // Send a message
-        std::string msg = "Hello, WebSocket!";
-        ws.write(net::buffer(msg));
-
-        // Receive a message
         beast::flat_buffer buffer;
-        ws.read(buffer);
+        while ( true )
+        {   
+            std::cout << "Enter a dutch word: " ;
+            std::cin >> word;
+            if (!(word.compare("exit") && word.compare("quit")))
+            {
+                break;
+            }
+            // Send a message
+            ws.write(net::buffer(word));
 
-        std::cout << "[client] Received: " << beast::make_printable(buffer.data()) << std::endl;
+            // Receive a message
+            ws.read(buffer);
+
+            std::cout << beast::make_printable(buffer.data()) << std::endl;
+            buffer.consume(buffer.size());
+        }
 
         // Close the WebSocket connection
         ws.close(websocket::close_code::normal);

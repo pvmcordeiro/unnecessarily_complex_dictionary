@@ -13,10 +13,15 @@ namespace websocket = beast::websocket;
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
 
+
+
 void websocket_worker(tcp::socket socket) {
     try {
         websocket::stream<tcp::socket> ws(std::move(socket));
         ws.accept();
+
+        auto a = std::shared_ptr<CsvDict>();
+        a->loadDictFromCsvFile(); 
 
         for (;;) {
             beast::flat_buffer buffer;
@@ -24,8 +29,18 @@ void websocket_worker(tcp::socket socket) {
             std::string msg = beast::buffers_to_string(buffer.data());
             std::cout << "[server] Received: " << msg << std::endl;
 
+            std::string result = a->search(msg);
+            if (result.empty())
+            {
+                result = a->searchAprox(msg);
+                if (result.empty())
+                {
+                    result = "\n";
+                }
+            }
+
             ws.text(ws.got_text());
-            ws.write(buffer.data());
+            ws.write(asio::buffer(result));
         }
     } catch (const beast::system_error& se) {
         std::cerr << "[server] WebSocket error: " << se.what() << std::endl;
@@ -34,6 +49,12 @@ void websocket_worker(tcp::socket socket) {
 
 int main() {
     try {
+        /**
+         * Opening .csv file and placing it in a map
+         */
+        auto a = std::shared_ptr<CsvDict>();
+        a->loadDictFromCsvFile(); 
+
         asio::io_context ioc;
         tcp::acceptor acceptor(ioc, tcp::endpoint(tcp::v4(), 9002));
 

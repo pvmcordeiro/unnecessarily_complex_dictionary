@@ -1,0 +1,47 @@
+<!--
+    This document was totally created by co-pilot.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Client</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        label, input, button { margin: 0.5em 0; display: block; }
+        #responseLabel { margin-top: 1em; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <input type="text" id="textInput" placeholder="Enter text here">
+    <button id="sendBtn">Send</button>
+    <label id="responseLabel">Response will appear here</label>
+
+    <script>
+        let ws;
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:9002');
+            ws.onmessage = function(event) {
+                document.getElementById('responseLabel').textContent = event.data;
+            };
+            ws.onclose = function() {
+                document.getElementById('responseLabel').textContent = 'Connection closed';
+            };
+            ws.onerror = function() {
+                document.getElementById('responseLabel').textContent = 'WebSocket error';
+            };
+        }
+
+        connectWebSocket();
+
+        document.getElementById('sendBtn').onclick = function() {
+            const input = document.getElementById('textInput').value;
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(input);
+            } else {
+                document.getElementById('responseLabel').textContent = 'WebSocket not connected';
+            }
+        };
+    </script>
+</body>
+</html>

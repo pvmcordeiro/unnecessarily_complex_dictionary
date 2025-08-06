@@ -8,7 +8,7 @@ TARGET = ucd
 BIN_SERVER = ws_server
 BIN_CLIENT = ws_client
 
-SRC_SERVER = ws_server.cpp
+SRC_SERVER = ws_server.cpp CsvDict.cpp
 SRC_CLIENT = ws_client.cpp
 
 # Source files
@@ -23,10 +23,10 @@ OBJS = $(SRCS:.cpp=.o)
 all: $(TARGET) $(BIN_SERVER) $(BIN_CLIENT)
 
 $(BIN_SERVER): $(SRC_SERVER)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(BIN_CLIENT): $(SRC_CLIENT)
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(TARGET): $(SRCS)
 	$(CXX) $(CXXFLAGS) -o $(TARGET) $(SRCS)
