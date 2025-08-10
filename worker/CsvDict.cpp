@@ -15,6 +15,7 @@ CsvDict::CsvDict() {}
 
 void CsvDict::loadDictFromCsvFile()
 {
+    // TODO: remove hardcoded file
     std::ifstream file("dict-dutch-pt.csv");
 
     if ( !file.is_open()) {
@@ -73,7 +74,7 @@ std::string CsvDict::searchAprox(const std::string _key)
                 keys.push_back(pair.first);
             }
         }
-}
+    }
     if (keys.size() > 0)
     {
         for ( const auto& k : keys)
