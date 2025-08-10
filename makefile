@@ -8,7 +8,7 @@ TARGET = ucd
 BIN_SERVER = ws_server
 BIN_CLIENT = ws_client
 
-SRC_SERVER = ws_server.cpp worker/CsvDict.cpp
+SRC_SERVER = ws_server.cpp worker/PaulosCSVParser.cpp worker/DictManager.cpp
 SRC_CLIENT = ws_client.cpp
 
 # Source files

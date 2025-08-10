@@ -18,9 +18,11 @@ int main ()
     std::cout << "--- Unncessarily Complex Dictionary --- \n type 'quit' or 'exit' to finish the program" << "\n\n";
     std::unordered_map<std::string, std::string> myDict;
     std::string dictFileName = "dict-dutch-pt.csv";
-
+    
     PaulosCSVParser cvsParser;
     DictManager dictManager = {myDict};
+
+    UCDLogger::getInstance()->updateOutputVerbosity(LOG_DEBUG);
 
     if (! cvsParser.getDictionary(dictFileName, myDict))
     {
@@ -43,6 +45,7 @@ int main ()
         {
             if (!dictManager.searchAproxWord(word, translatedWord))
             {
+                UCDLogger::getInstance()->log(LOG_INFO, "Word '" + word + " not found");
                 continue;
             }
         }

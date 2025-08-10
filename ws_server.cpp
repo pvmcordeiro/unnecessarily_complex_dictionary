@@ -6,6 +6,9 @@
 #include <string>
 
 #include "worker/CsvDict.hpp"
+#include "worker/PaulosCSVParser.hpp"
+#include "worker/DictManager.hpp"
+#include "commons/UCDLogger.hpp"
 
 
 namespace beast = boost::beast;
@@ -13,52 +16,67 @@ namespace websocket = beast::websocket;
 namespace asio = boost::asio;
 using tcp = asio::ip::tcp;
 
-
+std::unordered_map<std::string, std::string> myDict;
 
 void websocket_worker(tcp::socket socket) {
+    std::string word;
+    std::string translatedWord;
+    DictManager dictManager = {myDict};
+
     try {
         websocket::stream<tcp::socket> ws(std::move(socket));
         ws.accept();
-
-        auto a = std::shared_ptr<CsvDict>();
-        a->loadDictFromCsvFile(); 
 
         for (;;) {
             beast::flat_buffer buffer;
             ws.read(buffer);
             std::string msg = beast::buffers_to_string(buffer.data());
-            std::cout << "[server] Received: " << msg << std::endl;
+            translatedWord.clear();
 
-            std::string result = a->search(msg);
-            if (result.empty())
+            UCDLogger::getInstance()->log(LOG_INFO, "Received => " + msg);
+
+            if (!(msg.compare("exit") && msg.compare("quit")))
             {
-                result = a->searchAprox(msg);
-                if (result.empty())
+                break;
+            }
+            if (!dictManager.searchWord(msg, translatedWord))
+            {
+                if (!dictManager.searchAproxWord(msg, translatedWord))
                 {
-                    result = "\n";
+                    UCDLogger::getInstance()->log(LOG_INFO, "Word '" + msg + "' not found");
                 }
             }
 
             ws.text(ws.got_text());
-            ws.write(asio::buffer(result));
+
+            UCDLogger::getInstance()->log(LOG_INFO, "Responding <= " + translatedWord);
+            ws.write(asio::buffer(translatedWord));
         }
     } catch (const beast::system_error& se) {
-        std::cerr << "[server] WebSocket error: " << se.what() << std::endl;
+        UCDLogger::getInstance()->log(LOG_ERR, "WebSocket error: " + std::string(se.what()));
     }
 }
 
 int main() {
     try {
-        /**
-         * Opening .csv file and placing it in a map
-         */
-        auto a = std::shared_ptr<CsvDict>();
-        a->loadDictFromCsvFile(); 
+        UCDLogger::getInstance()->enableStdoutPrint(true);
+        UCDLogger::getInstance()->log(LOG_INFO, "Starting application");
 
+        // TODO remove this hardcoded file
+        std::string dictFileName = "dict-dutch-pt.csv";
+        
+        PaulosCSVParser cvsParser;
+
+        if (! cvsParser.getDictionary(dictFileName, myDict))
+        {
+            UCDLogger::getInstance()->log(LOG_ERR, "Not possible to parse dictionary from " + dictFileName);
+            return 1;
+        }
+    
         asio::io_context ioc;
         tcp::acceptor acceptor(ioc, tcp::endpoint(tcp::v4(), 9002));
 
-        std::cout << "WebSocket server listening on port 9002..." << std::endl;
+        UCDLogger::getInstance()->log(LOG_INFO, "WebSocket server listening on port 9002...");
 
         for (;;) {
             tcp::socket socket(ioc);
@@ -66,7 +84,7 @@ int main() {
             std::thread{websocket_worker, std::move(socket)}.detach();
         }
     } catch (const std::exception& e) {
-        std::cerr << "Fatal error: " << e.what() << std::endl;
+        UCDLogger::getInstance()->log(LOG_CRIT, "Fatal error: " + std::string(e.what()));
     }
     return 0;
 }

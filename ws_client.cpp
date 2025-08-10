@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 
+#include "commons/UCDLogger.hpp"
+
 namespace beast = boost::beast;
 namespace websocket = beast::websocket;
 namespace net = boost::asio;
@@ -11,6 +13,9 @@ using tcp = net::ip::tcp;
 
 int main(int argc, char **argv)
 {
+    UCDLogger::getInstance()->log(LOG_INFO, "Started client");
+    std::cout << "--- Unncessarily Complex Dictionary --- \n type 'quit' or 'exit' to finish the program" << "\n\n";
+
     try
     {
         // Check command line arguments.
@@ -40,12 +45,14 @@ int main(int argc, char **argv)
         ws.handshake(host, "/");
 
         beast::flat_buffer buffer;
+
         while ( true )
         {   
             std::cout << "Enter a dutch word: " ;
             std::cin >> word;
             if (!(word.compare("exit") && word.compare("quit")))
             {
+                UCDLogger::getInstance()->log(LOG_INFO, "Exited app");
                 break;
             }
             // Send a message
@@ -64,6 +71,8 @@ int main(int argc, char **argv)
     catch (std::exception const &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
+        UCDLogger::getInstance()->log(LOG_CRIT, "Error: " + std::string(e.what()));
+
         return 1;
     }
     return 0;
