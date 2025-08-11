@@ -26,7 +26,7 @@ int main ()
 
     if (! cvsParser.getDictionary(dictFileName, myDict))
     {
-        UCDLogger::getInstance()->log(LOG_ERR, "Not possible to parse dictionary from " + dictFileName);
+        UCD_LOGGER(LOG_ERR, "Not possible to parse dictionary from " + dictFileName);
         return 1;
     }
   
@@ -45,7 +45,7 @@ int main ()
         {
             if (!dictManager.searchAproxWord(word, translatedWord))
             {
-                UCDLogger::getInstance()->log(LOG_INFO, "Word '" + word + " not found");
+                UCD_LOGGER(LOG_INFO, "Word '" + word + " not found");
                 continue;
             }
         }

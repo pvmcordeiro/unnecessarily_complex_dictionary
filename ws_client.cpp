@@ -5,6 +5,7 @@
 #include <string>
 
 #include "commons/UCDLogger.hpp"
+#include "commons/CommandFactory.hpp"
 
 namespace beast = boost::beast;
 namespace websocket = beast::websocket;
@@ -13,7 +14,7 @@ using tcp = net::ip::tcp;
 
 int main(int argc, char **argv)
 {
-    UCDLogger::getInstance()->log(LOG_INFO, "Started client");
+    UCD_LOGGER(LOG_INFO, "Started client");
     std::cout << "--- Unncessarily Complex Dictionary --- \n type 'quit' or 'exit' to finish the program" << "\n\n";
 
     try
@@ -52,16 +53,29 @@ int main(int argc, char **argv)
             std::cin >> word;
             if (!(word.compare("exit") && word.compare("quit")))
             {
-                UCDLogger::getInstance()->log(LOG_INFO, "Exited app");
+                UCD_LOGGER(LOG_INFO, "Exited app");
                 break;
             }
+
+            UCDPackage upk, resp;
+            upk.command = CommandFactory::Command::SEARCH;
+            upk.format = CommandFactory::PayloadFormat::STRING;
+            upk.payloadSize = word.size();
+            upk.payload.assign(word.begin(), word.end());
+            
+            
             // Send a message
-            ws.write(net::buffer(word));
+            boost::json::object obj = upk.serializeUCDPackage();
+            std::string jsonStr = boost::json::serialize(obj);
+            ws.write(net::buffer(jsonStr));
 
             // Receive a message
             ws.read(buffer);
 
-            std::cout << beast::make_printable(buffer.data()) << std::endl;
+            resp.deserializeUCDPackage(boost::json::parse(beast::buffers_to_string(buffer.data())));
+            
+            //std::cout << beast::make_printable(buffer.data()) << std::endl;
+            std::cout << std::string(resp.payload.begin(), resp.payload.end()) << std::endl;
             buffer.consume(buffer.size());
         }
 
@@ -71,7 +85,7 @@ int main(int argc, char **argv)
     catch (std::exception const &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
-        UCDLogger::getInstance()->log(LOG_CRIT, "Error: " + std::string(e.what()));
+        UCD_LOGGER(LOG_CRIT, "Error: " + std::string(e.what()));
 
         return 1;
     }

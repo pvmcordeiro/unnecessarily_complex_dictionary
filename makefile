@@ -1,14 +1,14 @@
 # Compiler and flags
 CXX = g++
 CXXFLAGS = -std=c++17 -g -O0 -Wall
-LDFLAGS = -lboost_system -lpthread
+LDFLAGS = -lboost_system -lpthread -lboost_json
 
 # Output binary name
 TARGET = ucd
 BIN_SERVER = ws_server
 BIN_CLIENT = ws_client
 
-SRC_SERVER = ws_server.cpp worker/PaulosCSVParser.cpp worker/DictManager.cpp
+SRC_SERVER = ws_server.cpp worker/PaulosCSVParser.cpp worker/DictManager.cpp worker/WorkerControler.cpp
 SRC_CLIENT = ws_client.cpp
 
 # Source files

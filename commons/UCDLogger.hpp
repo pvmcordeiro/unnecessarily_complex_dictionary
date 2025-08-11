@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <libgen.h>
 
+#define UCD_LOGGER UCDLogger::getInstance()->log
 
 /**
  * This class is a Singleton that implements the logging for this system.
@@ -21,6 +22,8 @@
  * calls only once. Also, making it a Singleton improve the architecture for a
  * future log messaging to ELK.
  */
+// TODO: make this singleton thread safe
+
 class UCDLogger
 {
 private:

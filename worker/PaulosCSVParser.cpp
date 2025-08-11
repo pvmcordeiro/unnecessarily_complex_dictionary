@@ -12,7 +12,7 @@ bool PaulosCSVParser::getDictionary(std::string file_name, std::unordered_map<st
 
     if (!file.is_open())
     {
-        UCDLogger::getInstance()->log(LOG_ERR, "File " + file_name + " not open");
+        UCD_LOGGER(LOG_ERR, "File " + file_name + " not open");
         return false;
     }
     
@@ -20,7 +20,7 @@ bool PaulosCSVParser::getDictionary(std::string file_name, std::unordered_map<st
     while (std::getline(file, line))
     {
         parseAndAppendLine(line, dict);
-        UCDLogger::getInstance()->log(LOG_DEBUG, "Appending " + line);
+        UCD_LOGGER(LOG_DEBUG, "Appending " + line);
     }
     
     return true;
