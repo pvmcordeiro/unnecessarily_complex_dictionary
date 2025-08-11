@@ -5,7 +5,7 @@
 #include <string>
 
 #include "commons/UCDLogger.hpp"
-#include "commons/CommandFactory.hpp"
+#include "commons/UCDProtocol.hpp"
 
 namespace beast = boost::beast;
 namespace websocket = beast::websocket;
@@ -58,8 +58,8 @@ int main(int argc, char **argv)
             }
 
             UCDPackage upk, resp;
-            upk.command = CommandFactory::Command::SEARCH;
-            upk.format = CommandFactory::PayloadFormat::STRING;
+            upk.command = UCDProtocol::Command::SEARCH;
+            upk.format = UCDProtocol::PayloadFormat::STRING;
             upk.payloadSize = word.size();
             upk.payload.assign(word.begin(), word.end());
             

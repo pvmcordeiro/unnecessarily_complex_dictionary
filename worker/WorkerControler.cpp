@@ -22,9 +22,9 @@ UCDPackage WorkerControler::processReceivedMsg(const boost::beast::flat_buffer& 
 
     UCDPackage pack;
     pack.deserializeUCDPackage(jv);
-    if (pack.command == CommandFactory::Command::SEARCH)
+    if (pack.command == UCDProtocol::Command::SEARCH)
     {
-        if (pack.format == CommandFactory::PayloadFormat::STRING)
+        if (pack.format == UCDProtocol::PayloadFormat::STRING)
         {
             std::string wordToTranslate(pack.payload.begin(), pack.payload.begin() + pack.payloadSize);
 
@@ -34,15 +34,15 @@ UCDPackage WorkerControler::processReceivedMsg(const boost::beast::flat_buffer& 
 
             if (dictManager.searchWord(wordToTranslate, translatedWord))
             {
-                response.command = CommandFactory::Command::RESPONSE;
-                response.format = CommandFactory::PayloadFormat::STRING;
+                response.command = UCDProtocol::Command::RESPONSE;
+                response.format = UCDProtocol::PayloadFormat::STRING;
                 response.payloadSize = translatedWord.size();
                 response.payload.assign(translatedWord.begin(), translatedWord.end());
             } else {
                 if (!dictManager.searchAproxWord(wordToTranslate, translatedWord))
                 {
-                    response.command = CommandFactory::Command::RESPONSE;
-                    response.format = CommandFactory::PayloadFormat::STRING;
+                    response.command = UCDProtocol::Command::RESPONSE;
+                    response.format = UCDProtocol::PayloadFormat::STRING;
                     response.payloadSize = translatedWord.size();
                     response.payload.assign(translatedWord.begin(), translatedWord.end());
                 } else

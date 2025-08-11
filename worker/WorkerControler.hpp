@@ -5,11 +5,12 @@
 #include <boost/asio.hpp>
 #include <functional>
 
-#include "../commons/CommandFactory.hpp"
+#include "../commons/UCDProtocol.hpp"
 #include "PaulosCSVParser.hpp"
 
 
-class WorkerControler : public CommandFactory {
+
+class WorkerControler : public UCDProtocol {
 
     private:
         PaulosCSVParser cvsParser;

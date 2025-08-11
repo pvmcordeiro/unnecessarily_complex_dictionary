@@ -2,20 +2,20 @@
 
 #include <string>
 #include <boost/json.hpp>
-#include "../commons/CommandFactory.hpp"
+#include "../commons/UCDProtocol.hpp"
 
 class ClientCommand {
     boost::json::object requestWord(std::string);
     bool loadNewDictionary(std::string);
 };
 
-class TranslateWord : public CommandFactory {
+class TranslateWord : public UCDProtocol {
     private:
         UCDPackage pack;
     public:
     TranslateWord(std::string word) {
-        pack.command = CommandFactory::Command::SEARCH;
-        pack.format = CommandFactory::PayloadFormat::STRING;
+        pack.command = UCDProtocol::Command::SEARCH;
+        pack.format = UCDProtocol::PayloadFormat::STRING;
         pack.payload.assign(word.begin(), word.end());
         pack.payloadSize = word.size();
     };

@@ -4,14 +4,13 @@
 #include <vector>
 #include <memory>
 
-class CommandFactory {
+class UCDProtocol {
 
 public:
-    CommandFactory() {};
-    ~CommandFactory() {};
+    UCDProtocol() {};
+    ~UCDProtocol() {};
 
     const unsigned int version = 1;
-
 
     enum class PayloadFormat {
         VOID,
@@ -46,19 +45,18 @@ public:
         VOID
     };
 
-
 };
 
-// class CmdFact : public CommandFactory {
+// class CmdFact : public UCDProtocol {
 
 // };
 
 class UCDPackage {
     public:
     unsigned int version;
-    CommandFactory::Command command;
-    CommandFactory::Response response;
-    CommandFactory::PayloadFormat format;
+    UCDProtocol::Command command;
+    UCDProtocol::Response response;
+    UCDProtocol::PayloadFormat format;
     unsigned int payloadSize;
     std::vector<char> payload;
 
@@ -75,9 +73,9 @@ class UCDPackage {
     void deserializeUCDPackage(const boost::json::value& jv) {
         boost::json::object obj = jv.as_object();
 
-        command = static_cast<CommandFactory::Command>(obj["command"].as_int64());
-        response = static_cast<CommandFactory::Response>(obj["response"].as_int64());
-        format = static_cast<CommandFactory::PayloadFormat>(obj["format"].as_int64());
+        command = static_cast<UCDProtocol::Command>(obj["command"].as_int64());
+        response = static_cast<UCDProtocol::Response>(obj["response"].as_int64());
+        format = static_cast<UCDProtocol::PayloadFormat>(obj["format"].as_int64());
         payloadSize = obj["payloadSize"].as_int64();
 
         std::string payloadStr = obj["payload"].as_string().c_str();
