@@ -28,7 +28,6 @@ SOFTWARE.
 #include <string>
 
 #include "../commons/UCDLogger.hpp"
-#include "DictManager.hpp"
 #include "ProtoParserServer.hpp"
 
 namespace beast = boost::beast;
@@ -73,16 +72,6 @@ void WorkerControler::websocket_worker(tcp::socket socket) {
 
 bool WorkerControler::startConnectionThread()
 {
-
-    // TODO remove this hardcoded file
-    std::string dictFileName = "dict-dutch-pt.csv";
-    
-    if (! cvsParser.getDictionary(dictFileName, myDict))
-    {
-        UCD_LOGGER(LOG_ERR, "Not possible to parse dictionary from " + dictFileName);
-        return 1;
-    }
-
     asio::io_context ioc;
     tcp::acceptor acceptor(ioc, tcp::endpoint(tcp::v4(), 9002));
 

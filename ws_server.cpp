@@ -23,6 +23,7 @@ SOFTWARE.
 */
 #include "worker/WorkerControler.hpp"
 #include "commons/UCDLogger.hpp"
+#include "worker/DictManager.hpp"
 
 int main() {
     try {

@@ -36,7 +36,6 @@ SOFTWARE.
 class WorkerControler : public UCDProtocol {
 
     private:
-        PaulosCSVParser cvsParser;
 
     public:
     WorkerControler() = default;

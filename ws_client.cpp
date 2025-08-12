@@ -72,22 +72,37 @@ int main(int argc, char **argv)
 
         while ( true )
         {   
-            std::cout << "Enter a dutch word: " ;
+            UCDPackage upk, resp;
+            std::cout << "Enter an action (load, translate, quit): " ;
             std::cin >> word;
             if (!(word.compare("exit") && word.compare("quit")))
             {
                 UCD_LOGGER(LOG_INFO, "Exited app");
                 break;
+            } else if (!(word.compare("translate") && word.compare("trans")))
+            {
+                std::cout << "Enter an word to translate: " ;
+                std::string wordToTranslate;
+                std::cin >> wordToTranslate;
+
+                upk.version = UCD_PROTOCOL_CURRENT_VERSION;
+                upk.command = UCDProtocol::Command::SEARCH;
+                upk.format = UCDProtocol::PayloadFormat::STRING;
+                upk.payloadSize = wordToTranslate.size();
+                upk.payload.assign(wordToTranslate.begin(), wordToTranslate.end());
+
+            } else if (!word.compare("load"))
+            {
+                upk.version = UCD_PROTOCOL_CURRENT_VERSION;
+                upk.command = UCDProtocol::Command::LOAD_DICT_FROM_PAULO_CSV;
+                upk.format = UCDProtocol::PayloadFormat::FILE;
+                upk.payloadSize = word.size();
+                upk.payload.assign(word.begin(), word.end());
+            } else {
+                continue;
+                UCD_LOGGER(LOG_ERR, "Error: No such type of command " + word );
             }
 
-            UCDPackage upk, resp;
-            upk.command = UCDProtocol::Command::SEARCH;
-            upk.format = UCDProtocol::PayloadFormat::STRING;
-            upk.version = UCD_PROTOCOL_CURRENT_VERSION;
-            upk.payloadSize = word.size();
-            upk.payload.assign(word.begin(), word.end());
-            
-            
             // Send a message
             boost::json::object obj = upk.serializeUCDPackage();
             std::string jsonStr = boost::json::serialize(obj);
@@ -98,7 +113,6 @@ int main(int argc, char **argv)
 
             resp.deserializeUCDPackage(boost::json::parse(beast::buffers_to_string(buffer.data())));
             
-            //std::cout << beast::make_printable(buffer.data()) << std::endl;
             std::cout << std::string(resp.payload.begin(), resp.payload.end()) << std::endl;
             buffer.consume(buffer.size());
         }
