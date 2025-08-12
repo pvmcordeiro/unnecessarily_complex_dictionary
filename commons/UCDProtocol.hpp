@@ -30,71 +30,106 @@ SOFTWARE.
 
 #define UCD_PROTOCOL_CURRENT_VERSION 1
 
+/**
+ *  This class is the parent for all other protocol fields.
+ *  It seems a good idea in the beginning, but it became more 
+ *  complicated than foreseen. If someone has a better idea 
+ *  how to implement this inheritance, I'm open to suggestions.
+ */
+class UCDProtocolField {
+    public:
+    virtual ~UCDProtocolField() = default;
+};
+
 class UCDProtocol {
 
 public:
     UCDProtocol() {};
     ~UCDProtocol() {};
 
-    const unsigned int version = 1;
-
-    enum class PayloadFormat {
-        VOID,
-        STRING,
-        JSON,
-        CBON,
-        MESSAGE_PACK,
-        FILE,
-        NONE
+    /**
+     * The override of the operator is a way to make
+     */
+    class Version : public UCDProtocolField {
+        public:
+        u_int32_t version;
+        Version(u_int32_t v = UCD_PROTOCOL_CURRENT_VERSION) : version(v) {}
+        operator u_int32_t() const {return version;}
     };
 
-    enum class Command {
-        SEARCH,
-        ADD,
-        LOAD_DICT_FROM_FILE,
-        LOAD_DICT_FROM_URL,
-        LOAD_DICT_FROM_PAULO_CSV,
-        DROP_DB,
-        RESPONSE,
-        NONE
+    class PayloadFormat : public UCDProtocolField {
+        public:
+        static constexpr const u_int8_t VOID = 0;
+        static constexpr const u_int8_t STRING = 1;
+        static constexpr const u_int8_t JSON = 2; 
+        static constexpr const u_int8_t CBON = 3;
+        static constexpr const u_int8_t MESSAGE_PACK = 4;
+        static constexpr const u_int8_t FILE = 5;
+        static constexpr const u_int8_t NONE = 99;
+        u_int8_t value;
+        PayloadFormat(u_int8_t v = NONE) : value(v) {}
+        operator u_int8_t() const { return value; }
+   };
+
+    class Command : public UCDProtocolField {
+        public:
+        static constexpr const u_int8_t SEARCH = 0;
+        static constexpr const u_int8_t ADD_WORD = 1;
+        static constexpr const u_int8_t LOAD_DICT_FROM_FILE = 2;
+        static constexpr const u_int8_t LOAD_DICT_FROM_URL = 3;
+        static constexpr const u_int8_t LOAD_DICT_FROM_PAULO_CSV = 4;
+        static constexpr const u_int8_t DROP_DB = 5;
+        static constexpr const u_int8_t RESPONSE = 6;
+        static constexpr const u_int8_t NONE = 99;
+        u_int8_t value;
+        Command(u_int8_t v = NONE) : value(v) {}
+        operator u_int8_t() const { return value; }
     };
 
-    enum class LoadOptions {
-        ADD_MISSING,
-        OVERRIDE,
-        DROP_DB_BEFORE_LOAD,
-        NONE
+    class LoadOptions : public UCDProtocolField {
+        public:
+        static constexpr const u_int8_t ADD_MISSING = 0;
+        static constexpr const u_int8_t OVERRIDE = 1;
+        static constexpr const u_int8_t DROP_DB_BEFORE_LOAD = 2;
+        static constexpr const u_int8_t NONE = 99;
+        u_int8_t value;
+        LoadOptions(u_int8_t v = NONE) : value(v) {}
+        operator u_int8_t() const { return value; }
     };
 
-    enum class Response {
-        SUCCESS,
-        MULTIPLE_MATCHES,
-        WORD_NOT_FOUND,
-        FAIL,
-        VOID,
-        NONE
+    class Response : public UCDProtocolField {
+        public:
+        static constexpr const u_int8_t SUCCESS = 0;
+        static constexpr const u_int8_t MULTIPLE_MATCHES = 1;
+        static constexpr const u_int8_t WORD_NOT_FOUND = 2;
+        static constexpr const u_int8_t FAIL = 3;
+        static constexpr const u_int8_t VOID = 4;
+        static constexpr const u_int8_t NONE = 99;
+        u_int8_t value;
+        Response(u_int8_t v = NONE) : value(v) {}
+        operator u_int8_t() const { return value; }
     };
 
 };
 
 class UCDPackage {
     public:
-    UCDPackage() = default;
-    UCDPackage(unsigned int, UCDProtocol::Command, UCDProtocol::PayloadFormat, UCDProtocol::Response);
-    ~UCDPackage() = default;
+    UCDPackage(){};
+    ~UCDPackage(){};
 
-    unsigned int version;
+    UCDProtocol::Version version;
     UCDProtocol::Command command;
     UCDProtocol::Response response;
     UCDProtocol::PayloadFormat format;
-    unsigned int payloadSize;
+    u_int32_t payloadSize;
     std::vector<char> payload;
 
     boost::json::object serializeUCDPackage() {
         boost::json::object obj;
-        obj["command"] = static_cast<int>(command);
-        obj["response"] = static_cast<int>(response);
-        obj["format"] = static_cast<int>(format);
+        obj["command"] = static_cast<u_int8_t>(command);
+        obj["response"] = static_cast<u_int8_t>(response);
+        obj["format"] = static_cast<u_int8_t>(format);
+        obj["version"] = static_cast<u_int32_t>(version);
         obj["payloadSize"] = payloadSize;
         obj["payload"] = std::string(payload.begin(), payload.end());
         return obj;
@@ -103,114 +138,16 @@ class UCDPackage {
     void deserializeUCDPackage(const boost::json::value& jv) {
         boost::json::object obj = jv.as_object();
 
-        command = static_cast<UCDProtocol::Command>(obj["command"].as_int64());
+        command = UCDProtocol::Command(static_cast<u_int8_t>(obj["command"].as_int64()));
         response = static_cast<UCDProtocol::Response>(obj["response"].as_int64());
         format = static_cast<UCDProtocol::PayloadFormat>(obj["format"].as_int64());
+        version = static_cast<UCDProtocol::Version>(obj["version"].as_int64());
         payloadSize = obj["payloadSize"].as_int64();
-
         std::string payloadStr = obj["payload"].as_string().c_str();
         payload.assign(payloadStr.begin(), payloadStr.end());
     }
 };
 
-class UCDProtocolSlice {
-    private:
-        UCDProtocol::Command command = UCDProtocol::Command::NONE;
-        UCDProtocol::PayloadFormat payloadFormat = UCDProtocol::PayloadFormat::NONE;
-        UCDProtocol::Response response = UCDProtocol::Response::NONE;
-        unsigned int version = 0;        
-
-        std::shared_ptr<UCDProtocolSlice> nextSlice;
-        std::function<UCDPackage(const unsigned int& size, const std::vector<char>& payload)> callBack = nullptr;        
-    public:
-        UCDProtocolSlice(const UCDProtocol::Command cmd) : command(cmd) {}
-        UCDProtocolSlice(const UCDProtocol::PayloadFormat fmt) : payloadFormat(fmt) {}
-        UCDProtocolSlice(const UCDProtocol::Response rsp) : response(rsp) {}
-        UCDProtocolSlice(const unsigned int ver) : version(ver) {}
-
-        //~ŨCDProtocolSlice() = default;
-        void assignCallback(std::function<UCDPackage(const unsigned int& size, const std::vector<char>& payload)> _callBack)
-        {
-            callBack = _callBack;
-        }
-
-        UCDPackage execCallback(const UCDPackage& pkg)
-        {
-            return callBack(pkg.payloadSize, pkg.payload);            
-        }
-
-        bool execCallbackInTree(const UCDPackage& pkg, UCDPackage& resp)
-        {
-            if (command == pkg.command || 
-                payloadFormat == pkg.format ||
-                response == pkg.response ||
-                version == pkg.version)
-            {
-                // If there is a next slice, continue the chain
-                if (nextSlice)
-                {
-                    nextSlice->getNextSlice(pkg, resp);
-                }
-
-                if (callBack)
-                {
-                    resp = execCallback(pkg);
-                    return true;
-                } 
-            }
-            return false;
-        }
-
-        std::shared_ptr<UCDProtocolSlice> getNextSlice(const UCDPackage& pkg, UCDPackage& resp)
-        {
-            std::shared_ptr<UCDProtocolSlice> result = nullptr;
-            if (command == pkg.command || 
-                payloadFormat == pkg.format ||
-                response == pkg.response ||
-                version == pkg.version)
-            {
-                // If there is a next slice, continue the chain
-                if (nextSlice)
-                {
-                    result = nextSlice->getNextSlice(pkg, resp);
-                }
-
-                if (callBack)
-                {
-                    resp = execCallback(pkg);
-                } 
-            }
-            return result;
-        }
-
-        std::shared_ptr<UCDProtocolSlice> addSlice(UCDProtocol::PayloadFormat format)
-        {
-            std::shared_ptr<UCDProtocolSlice> slice = std::make_shared<UCDProtocolSlice>(format);
-            nextSlice = slice;
-            return slice;
-        }
-
-        std::shared_ptr<UCDProtocolSlice> addSlice(UCDProtocol::Command command)
-        {
-            std::shared_ptr<UCDProtocolSlice> slice = std::make_shared<UCDProtocolSlice>(command);
-            nextSlice = slice;
-            return slice;
-        }
-
-        std::shared_ptr<UCDProtocolSlice> addSlice(UCDProtocol::Response rsp)
-        {
-            std::shared_ptr<UCDProtocolSlice> slice = std::make_shared<UCDProtocolSlice>(rsp);
-            nextSlice = slice;
-            return slice;
-        }
-
-        std::shared_ptr<UCDProtocolSlice> addSlice(unsigned int version)
-        {
-            std::shared_ptr<UCDProtocolSlice> slice = std::make_shared<UCDProtocolSlice>(version);
-            nextSlice = slice;
-            return slice;
-        }
-};
 
 // class UCDProtocolParser {
 //     private:

@@ -28,7 +28,7 @@ SOFTWARE.
 #include <string>
 
 #include "../commons/UCDLogger.hpp"
-#include "ProtoParserServer.hpp"
+#include "ProtocolParserServer.hpp"
 
 namespace beast = boost::beast;
 namespace websocket = beast::websocket;
@@ -40,7 +40,7 @@ UCDPackage WorkerControler::processReceivedMsg(const boost::beast::flat_buffer& 
     std::string msg = beast::buffers_to_string(buff.data());
     boost::json::value jv = boost::json::parse(msg);
 
-    ProtocolParserForServer parser;
+    ProtocolParserServer parser;
     UCDPackage pack;
     pack.deserializeUCDPackage(jv);
     UCDPackage response = parser.processMsg(pack);
