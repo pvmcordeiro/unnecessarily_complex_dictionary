@@ -90,29 +90,36 @@ ProtocolParserServer::~ProtocolParserServer() {}
 /**
  * This is the constructor of the ProtocolParserServer class,
  * whenever a new protocol map is inserted it must be added as
- * a lambda function in the vector declaration
+ * a lambda function in the vector declaration.
+ * 
+ * I had though this to be an easy way to declare the 
+ * protocol mapping, but end-up being complicated and 
+ * confusing.
+ * It was supposed to be like:
+ * root = { root1.addSlice(SEARCH).addSlice(STRING).assignCB() , ... }
+ * But became this leviathan
  */
+// TODO: is there a better way to do that?
 ProtocolParserServer::ProtocolParserServer()
 {
     rootProtocolSlices = {
         []{
             auto myComparison = [](const UCDPackage &pkg) -> bool {
+                UCD_LOGGER(LOG_DEBUG, "Comparison (from vector) SEARCH COMMAND");
                 return (pkg.command == UCDProtocol::Command::SEARCH);
             };
 
             auto slice = std::make_shared<UCDProtocolSlice>(myComparison);
-            UCDProtocol::Command cmd = UCDProtocol::Command::SEARCH;
-            //slice->addSlice(cmd)->assignCallback(v1_search_string_cb);
-            slice->assignCallback(v1_search_string_cb);
+            UCDProtocol::PayloadFormat pType =UCDProtocol::PayloadFormat::STRING;
+            (slice->addSlice(pType))->assignCallback(v1_search_string_cb);
             return slice;
         }(),
         []{
             auto myComparison = [](const UCDPackage &pkg) -> bool {
+                UCD_LOGGER(LOG_DEBUG, "Comparison (from vector) LOAD_DICT_FROM_PAULO_CSV COMMAND");
                 return (pkg.command == UCDProtocol::Command::LOAD_DICT_FROM_PAULO_CSV);
             };
             auto slice = std::make_shared<UCDProtocolSlice>(myComparison);
-            UCDProtocol::Command cmd = UCDProtocol::Command::LOAD_DICT_FROM_PAULO_CSV;
-            //slice->addSlice(cmd)->assignCallback(v1_load_from_file);
             slice->assignCallback(v1_load_from_file);
             return slice;
         }()

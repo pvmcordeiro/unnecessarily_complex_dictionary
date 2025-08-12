@@ -28,6 +28,7 @@ SOFTWARE.
 int main() {
     try {
         UCDLogger::getInstance()->enableStdoutPrint(true);
+        UCDLogger::getInstance()->updateOutputVerbosity(LOG_DEBUG);
         UCD_LOGGER(LOG_INFO, "Starting application");
 
         WorkerControler controler;

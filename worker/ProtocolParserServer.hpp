@@ -30,18 +30,23 @@ SOFTWARE.
 #include "DictManager.hpp"
 #include "PaulosCSVParser.hpp"
 
+/*
+ * The target for this class was study callbacks (std::function and lambda),
+ * inheritage and the decorator design patter, that end-up not being 
+ * implemented here.
+*/
 class UCDProtocolSlice {
     private:
     std::shared_ptr<UCDProtocolSlice> nextSlice;
     std::function<bool(const UCDPackage&)> comparingFieldsCB = nullptr;
     std::function<UCDPackage(const unsigned int& size, const std::vector<char>& payload)> callBack = nullptr;        
     public:
-        UCDProtocolSlice(std::function<bool(const UCDPackage&)> _comparingFieldCB) : comparingFieldsCB(_comparingFieldCB)  {}
+        UCDProtocolSlice(std::function<bool(const UCDPackage&)> comparingFieldsCallBack) : comparingFieldsCB(comparingFieldsCallBack)  {}
         virtual ~UCDProtocolSlice() = default;
 
-        void assignCallback(std::function<UCDPackage(const unsigned int& size, const std::vector<char>& payload)> _callBack)
+        void assignCallback(std::function<UCDPackage(const unsigned int& size, const std::vector<char>& payload)> cb)
         {
-            callBack = _callBack;
+            callBack = cb;
         }
 
         UCDPackage execCallback(const UCDPackage& pkg)
@@ -56,11 +61,13 @@ class UCDProtocolSlice {
                 // If there is a next slice, continue the chain
                 if (nextSlice)
                 {
+                    UCD_LOGGER(LOG_DEBUG, "Going to the next protocol slice");
                     nextSlice->getNextSlice(pkg, resp);
                 }
 
                 if (callBack)
                 {
+                    UCD_LOGGER(LOG_DEBUG, "Found call back");
                     resp = execCallback(pkg);
                     return true;
                 } 
@@ -90,6 +97,7 @@ class UCDProtocolSlice {
         std::shared_ptr<UCDProtocolSlice> addSlice(UCDProtocol::PayloadFormat format)
         {
             auto myComparison = [format](const UCDPackage &pkg) -> bool {
+                UCD_LOGGER(LOG_DEBUG, "Entered payload format slice");
                 return (pkg.format == format);
             };
             auto slice =std::make_shared<UCDProtocolSlice>( myComparison);
@@ -100,6 +108,7 @@ class UCDProtocolSlice {
         std::shared_ptr<UCDProtocolSlice> addSlice(UCDProtocol::Command command)
         {
             auto myComparison = [command](const UCDPackage &pkg) -> bool {
+                UCD_LOGGER(LOG_DEBUG, "Entered command slice");
                 return (pkg.command == command);
             };
             auto slice =std::make_shared<UCDProtocolSlice>(myComparison);
@@ -110,6 +119,7 @@ class UCDProtocolSlice {
         std::shared_ptr<UCDProtocolSlice> addSlice(UCDProtocol::Response rsp)
         {
             auto myComparison = [rsp](const UCDPackage &pkg) -> bool {
+                UCD_LOGGER(LOG_DEBUG, "Entered response slice");
                 return (pkg.response == rsp);
             };
             auto slice =std::make_shared<UCDProtocolSlice>(myComparison);
@@ -120,6 +130,7 @@ class UCDProtocolSlice {
         std::shared_ptr<UCDProtocolSlice> addSlice(UCDProtocol::Version version)
         {
             auto myComparison = [version](const UCDPackage &pkg) -> bool {
+                UCD_LOGGER(LOG_DEBUG, "Entered version slice");
                 return (pkg.version == version);
             };
             auto slice =std::make_shared<UCDProtocolSlice>(myComparison);
