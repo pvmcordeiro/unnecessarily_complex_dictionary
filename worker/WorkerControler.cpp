@@ -28,7 +28,8 @@ SOFTWARE.
 #include <string>
 
 #include "../commons/UCDLogger.hpp"
-#include "../worker/DictManager.hpp"
+#include "DictManager.hpp"
+#include "ProtoParserServer.hpp"
 
 namespace beast = boost::beast;
 namespace websocket = beast::websocket;
@@ -40,41 +41,11 @@ UCDPackage WorkerControler::processReceivedMsg(const boost::beast::flat_buffer& 
     std::string msg = beast::buffers_to_string(buff.data());
     boost::json::value jv = boost::json::parse(msg);
 
-    UCDPackage response;
-    DictManager dictManager = {myDict};
-
+    ProtocolParserForServer parser;
     UCDPackage pack;
     pack.deserializeUCDPackage(jv);
-    if (pack.command == UCDProtocol::Command::SEARCH)
-    {
-        if (pack.format == UCDProtocol::PayloadFormat::STRING)
-        {
-            std::string wordToTranslate(pack.payload.begin(), pack.payload.begin() + pack.payloadSize);
+    UCDPackage response = parser.processMsg(pack);
 
-            std::string translatedWord;
-
-            UCD_LOGGER(LOG_INFO, "Received => " + wordToTranslate);
-
-            if (dictManager.searchWord(wordToTranslate, translatedWord))
-            {
-                response.command = UCDProtocol::Command::RESPONSE;
-                response.format = UCDProtocol::PayloadFormat::STRING;
-                response.payloadSize = translatedWord.size();
-                response.payload.assign(translatedWord.begin(), translatedWord.end());
-            } else {
-                if (!dictManager.searchAproxWord(wordToTranslate, translatedWord))
-                {
-                    response.command = UCDProtocol::Command::RESPONSE;
-                    response.format = UCDProtocol::PayloadFormat::STRING;
-                    response.payloadSize = translatedWord.size();
-                    response.payload.assign(translatedWord.begin(), translatedWord.end());
-                } else
-                {
-                    UCD_LOGGER(LOG_INFO, "Word '" + wordToTranslate + "' not found");
-                }
-            }
-        }
-    }
     return response;
 }
 

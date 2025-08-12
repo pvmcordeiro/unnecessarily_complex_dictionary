@@ -26,6 +26,9 @@ SOFTWARE.
 #include <boost/json.hpp>
 #include <vector>
 #include <memory>
+#include <functional>
+
+#define UCD_PROTOCOL_CURRENT_VERSION 1
 
 class UCDProtocol {
 
@@ -41,7 +44,8 @@ public:
         JSON,
         CBON,
         MESSAGE_PACK,
-        FILE
+        FILE,
+        NONE
     };
 
     enum class Command {
@@ -51,13 +55,15 @@ public:
         LOAD_DICT_FROM_URL,
         LOAD_DICT_FROM_PAULO_CSV,
         DROP_DB,
-        RESPONSE = 99
+        RESPONSE,
+        NONE
     };
 
     enum class LoadOptions {
         ADD_MISSING,
         OVERRIDE,
-        DROP_DB_BEFORE_LOAD
+        DROP_DB_BEFORE_LOAD,
+        NONE
     };
 
     enum class Response {
@@ -65,17 +71,18 @@ public:
         MULTIPLE_MATCHES,
         WORD_NOT_FOUND,
         FAIL,
-        VOID
+        VOID,
+        NONE
     };
 
 };
 
-// class CmdFact : public UCDProtocol {
-
-// };
-
 class UCDPackage {
     public:
+    UCDPackage() = default;
+    UCDPackage(unsigned int, UCDProtocol::Command, UCDProtocol::PayloadFormat, UCDProtocol::Response);
+    ~UCDPackage() = default;
+
     unsigned int version;
     UCDProtocol::Command command;
     UCDProtocol::Response response;
@@ -105,3 +112,108 @@ class UCDPackage {
         payload.assign(payloadStr.begin(), payloadStr.end());
     }
 };
+
+class UCDProtocolSlice {
+    private:
+        UCDProtocol::Command command = UCDProtocol::Command::NONE;
+        UCDProtocol::PayloadFormat payloadFormat = UCDProtocol::PayloadFormat::NONE;
+        UCDProtocol::Response response = UCDProtocol::Response::NONE;
+        unsigned int version = 0;        
+
+        std::shared_ptr<UCDProtocolSlice> nextSlice;
+        std::function<UCDPackage(const unsigned int& size, const std::vector<char>& payload)> callBack = nullptr;        
+    public:
+        UCDProtocolSlice(const UCDProtocol::Command cmd) : command(cmd) {}
+        UCDProtocolSlice(const UCDProtocol::PayloadFormat fmt) : payloadFormat(fmt) {}
+        UCDProtocolSlice(const UCDProtocol::Response rsp) : response(rsp) {}
+        UCDProtocolSlice(const unsigned int ver) : version(ver) {}
+
+        //~ŨCDProtocolSlice() = default;
+        void assignCallback(std::function<UCDPackage(const unsigned int& size, const std::vector<char>& payload)> _callBack)
+        {
+            callBack = _callBack;
+        }
+
+        UCDPackage execCallback(const UCDPackage& pkg)
+        {
+            return callBack(pkg.payloadSize, pkg.payload);            
+        }
+
+        bool execCallbackInTree(const UCDPackage& pkg, UCDPackage& resp)
+        {
+            if (command == pkg.command || 
+                payloadFormat == pkg.format ||
+                response == pkg.response ||
+                version == pkg.version)
+            {
+                // If there is a next slice, continue the chain
+                if (nextSlice)
+                {
+                    nextSlice->getNextSlice(pkg, resp);
+                }
+
+                if (callBack)
+                {
+                    resp = execCallback(pkg);
+                    return true;
+                } 
+            }
+            return false;
+        }
+
+        std::shared_ptr<UCDProtocolSlice> getNextSlice(const UCDPackage& pkg, UCDPackage& resp)
+        {
+            std::shared_ptr<UCDProtocolSlice> result = nullptr;
+            if (command == pkg.command || 
+                payloadFormat == pkg.format ||
+                response == pkg.response ||
+                version == pkg.version)
+            {
+                // If there is a next slice, continue the chain
+                if (nextSlice)
+                {
+                    result = nextSlice->getNextSlice(pkg, resp);
+                }
+
+                if (callBack)
+                {
+                    resp = execCallback(pkg);
+                } 
+            }
+            return result;
+        }
+
+        std::shared_ptr<UCDProtocolSlice> addSlice(UCDProtocol::PayloadFormat format)
+        {
+            std::shared_ptr<UCDProtocolSlice> slice = std::make_shared<UCDProtocolSlice>(format);
+            nextSlice = slice;
+            return slice;
+        }
+
+        std::shared_ptr<UCDProtocolSlice> addSlice(UCDProtocol::Command command)
+        {
+            std::shared_ptr<UCDProtocolSlice> slice = std::make_shared<UCDProtocolSlice>(command);
+            nextSlice = slice;
+            return slice;
+        }
+
+        std::shared_ptr<UCDProtocolSlice> addSlice(UCDProtocol::Response rsp)
+        {
+            std::shared_ptr<UCDProtocolSlice> slice = std::make_shared<UCDProtocolSlice>(rsp);
+            nextSlice = slice;
+            return slice;
+        }
+
+        std::shared_ptr<UCDProtocolSlice> addSlice(unsigned int version)
+        {
+            std::shared_ptr<UCDProtocolSlice> slice = std::make_shared<UCDProtocolSlice>(version);
+            nextSlice = slice;
+            return slice;
+        }
+};
+
+// class UCDProtocolParser {
+//     private:
+//     public:
+//     UCDProtocolParser
+// };

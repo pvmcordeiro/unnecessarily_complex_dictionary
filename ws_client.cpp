@@ -83,6 +83,7 @@ int main(int argc, char **argv)
             UCDPackage upk, resp;
             upk.command = UCDProtocol::Command::SEARCH;
             upk.format = UCDProtocol::PayloadFormat::STRING;
+            upk.version = UCD_PROTOCOL_CURRENT_VERSION;
             upk.payloadSize = word.size();
             upk.payload.assign(word.begin(), word.end());
             
