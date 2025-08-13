@@ -183,7 +183,7 @@ class UCDPackage {
     void deserializeUCDPackage(const boost::json::value& jv) {
         boost::json::object obj = jv.as_object();
 
-        command = UCDProtocol::Command(static_cast<u_int8_t>(obj["command"].as_int64()));
+        command = static_cast<UCDProtocol::Command>(obj["command"].as_int64());
         response = static_cast<UCDProtocol::Response>(obj["response"].as_int64());
         format = static_cast<UCDProtocol::PayloadFormat>(obj["format"].as_int64());
 #ifdef MORE_COMPLEXITY_PLEASE

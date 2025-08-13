@@ -24,6 +24,7 @@ SOFTWARE.
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/json.hpp>
 #include <iostream>
 #include <string>
 
@@ -34,6 +35,37 @@ namespace beast = boost::beast;
 namespace websocket = beast::websocket;
 namespace net = boost::asio;
 using tcp = net::ip::tcp;
+
+void
+parse_and_print_rsp(const UCDPackage& pkg)
+{
+    if (pkg.command == UCDProtocol::Command::RESPONSE)
+    {
+        if (pkg.format == UCDProtocol::PayloadFormat::STRING)
+        {
+            std::cout << std::string(pkg.payload.begin(), pkg.payload.end()) << std::endl;
+        } else
+        if (pkg.format == UCDProtocol::PayloadFormat::JSON)
+        {
+            std::string  sPayload = std::string(pkg.payload.begin(), pkg.payload.end());
+            boost::json::value jval = boost::json::parse(sPayload);
+            boost::json::object obj = jval.as_object();
+
+            if (obj.contains("matches")) {
+                const boost::json::array& matches = obj["matches"].as_array();
+                for (const auto& entry : matches) {
+                    const boost::json::array& pair = entry.as_array();
+                    if (pair.size() == 2) {
+                        std::string word = pair[0].as_string().c_str();
+                        std::string translation = pair[1].as_string().c_str();
+                        std::cout << word << " = " << translation << std::endl;
+                    }
+                }
+            }
+        }
+    }
+    UCD_LOGGER(LOG_ERR, "Not supported message");
+}
 
 int main(int argc, char **argv)
 {
@@ -113,7 +145,8 @@ int main(int argc, char **argv)
 
             resp.deserializeUCDPackage(boost::json::parse(beast::buffers_to_string(buffer.data())));
             
-            std::cout << std::string(resp.payload.begin(), resp.payload.end()) << std::endl;
+            parse_and_print_rsp(resp);
+
             buffer.consume(buffer.size());
         }
 

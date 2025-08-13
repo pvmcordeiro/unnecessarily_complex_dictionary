@@ -24,6 +24,8 @@ SOFTWARE.
 #pragma once
 #include <string>
 #include <unordered_map>
+#include <boost/json.hpp>
+
 
 class DictManager {
 
@@ -36,5 +38,6 @@ public:
     };
     ~DictManager() = default;
     bool searchWord(std::string, std::string&) const;
-    bool searchAproxWord(std::string, std::string&) const;
+    bool searchAproxWord(std::string, boost::json::object&) const;
+    bool searchAproxWord(std::string word, std::string& result) const;
 };

@@ -35,6 +35,7 @@ UCDPackage v1_search_string_cb(const unsigned int& size, const std::vector<char>
 {
     std::string wordToTranslate(payload.begin(), payload.begin() + size);
     std::string translatedWord;
+    boost::json::object multipleTranslations;
     DictManager dictManager = {myDict};
 
     UCDPackage response;
@@ -49,13 +50,14 @@ UCDPackage v1_search_string_cb(const unsigned int& size, const std::vector<char>
         response.payloadSize = translatedWord.size();
         response.payload.assign(translatedWord.begin(), translatedWord.end());
 
-    } else if (dictManager.searchAproxWord(wordToTranslate, translatedWord)) 
+    } else if (dictManager.searchAproxWord(wordToTranslate, multipleTranslations)) 
     {
         UCD_LOGGER(LOG_INFO, "Multiples responses for: " + wordToTranslate);
         response.command = UCDProtocol::Command::RESPONSE;
-        response.format = UCDProtocol::PayloadFormat::STRING;
-        response.payloadSize = translatedWord.size();
-        response.payload.assign(translatedWord.begin(), translatedWord.end());
+        response.format = UCDProtocol::PayloadFormat::JSON;
+        std::string jsonStr = boost::json::serialize(multipleTranslations);
+        response.payloadSize = jsonStr.size();
+        response.payload.assign(jsonStr.begin(), jsonStr.end());
     } else
     {
         UCD_LOGGER(LOG_INFO, "Word '" + wordToTranslate + "' not found");
@@ -158,7 +160,6 @@ UCDPackage ProtocolParserServer::processMsg(const UCDPackage& req)
             // ex.: if (req.version < 10)
             resp = v1_search_string_cb(req.payloadSize, req.payload);
         }
-
     } else
     if (req.command == UCDProtocol::Command::LOAD_DICT_FROM_PAULO_CSV) 
     {

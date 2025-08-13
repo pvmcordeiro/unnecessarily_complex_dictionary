@@ -23,12 +23,14 @@ SOFTWARE.
 */
 #include "DictManager.hpp"
 
-#include <vector>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <boost/json.hpp>
+#include <boost/json/array.hpp>
 
-bool DictManager::searchWord(std::string word, std::string& result) const {
+bool 
+DictManager::searchWord(std::string word, std::string& result) const {
     auto val = dict.find(word);
     if (dict.end() == val)
     {
@@ -38,27 +40,46 @@ bool DictManager::searchWord(std::string word, std::string& result) const {
     return true;
 }
 
-bool DictManager::searchAproxWord(std::string word, std::string& result) const {
-    std::vector<std::string> keys;
+bool 
+DictManager::searchAproxWord(std::string word, std::string& result) const {
     std::ostringstream osResult;
-
+ 
     for (const auto& pair : dict)
     {
-        if (pair.first.find(word) != std::string::npos)
+        // finds key words that matches a piece of the word
+        if (pair.first.find(word) != std::string::npos && !pair.second.empty())
         {
-            if (!pair.second.empty())
-            {
-                keys.push_back(pair.first);
-            }
+            osResult << '\t' + pair.first << " = " << pair.second << "\n";
         }
     }
-    if (keys.size() > 0)
+    result = osResult.str();
+    if (!result.empty())
     {
-        for ( const auto& k : keys)
+        return true;
+    }
+     return false;
+}
+
+bool 
+DictManager::searchAproxWord(std::string word, boost::json::object& result) const {
+    boost::json::object jsonObj;
+    boost::json::array arr;
+
+    result.clear();
+    for (const auto& pair : dict)
+    {
+        // finds key words that matches a piece of the word
+        if (pair.first.find(word) != std::string::npos && !pair.second.empty())
         {
-            osResult << '\t' + k << " = " << dict[k] << "\n";
+            boost::json::array pairArr;
+            pairArr.push_back(boost::json::value(pair.first));
+            pairArr.push_back(boost::json::value(pair.second));
+            arr.push_back(pairArr);
         }
-        result = osResult.str();
+    }
+    if (!arr.empty())
+    {
+        result["matches"] = arr;
         return true;
     }
     return false;
