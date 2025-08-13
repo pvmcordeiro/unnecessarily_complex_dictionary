@@ -87,21 +87,22 @@ UCDPackage v1_load_from_file(const unsigned int& size, const std::vector<char>& 
 }
 ProtocolParserServer::~ProtocolParserServer() {}
 
-/**
- * This is the constructor of the ProtocolParserServer class,
- * whenever a new protocol map is inserted it must be added as
- * a lambda function in the vector declaration.
- * 
- * I had though this to be an easy way to declare the 
- * protocol mapping, but end-up being complicated and 
- * confusing.
- * It was supposed to be like:
- * root = { root1.addSlice(SEARCH).addSlice(STRING).assignCB() , ... }
- * But became this leviathan
- */
-// TODO: is there a better way to do that?
 ProtocolParserServer::ProtocolParserServer()
 {
+#ifdef MORE_COMPLEXITY_PLEASE
+    /**
+     * In this constructor of the ProtocolParserServer class,
+     * whenever a new protocol map is inserted it must be added as
+     * a lambda function in the vector declaration.
+     * 
+     * I had though this to be an easy way to declare the 
+     * protocol mapping, but end-up being complicated and 
+     * confusing.
+     * It was supposed to be like:
+     * root = { root1.addSlice(SEARCH).addSlice(STRING).assignCB() , ... }
+     * But became this leviathan
+     */
+    // TODO: is there a better way to do that?
     rootProtocolSlices = {
         []{
             auto myComparison = [](const UCDPackage &pkg) -> bool {
@@ -111,7 +112,8 @@ ProtocolParserServer::ProtocolParserServer()
 
             auto slice = std::make_shared<UCDProtocolSlice>(myComparison);
             UCDProtocol::PayloadFormat pType =UCDProtocol::PayloadFormat::STRING;
-            (slice->addSlice(pType))->assignCallback(v1_search_string_cb);
+            auto slice2 = slice->addSlice(pType);
+            slice2->assignCallback(v1_search_string_cb);
             return slice;
         }(),
         []{
@@ -124,6 +126,7 @@ ProtocolParserServer::ProtocolParserServer()
             return slice;
         }()
     };
+#endif
 }
 
 UCDPackage ProtocolParserServer::processMsg(const UCDPackage& req)
@@ -131,6 +134,10 @@ UCDPackage ProtocolParserServer::processMsg(const UCDPackage& req)
     UCDPackage resp;
     resp.response = UCDProtocol::Response::FAIL;
 
+#ifdef MORE_COMPLEXITY_PLEASE
+    // Removing this part of the processMsg I'm removing all the importance of
+    // The class ProtocolParserServer, the implementation below.
+    // The implementation meant by ProtocolParserServer is not fully OK.
     for (auto it = rootProtocolSlices.begin(); it != rootProtocolSlices.end(); it++)
     {
         if ((*it)->execCallbackInTree(req, resp))
@@ -138,5 +145,26 @@ UCDPackage ProtocolParserServer::processMsg(const UCDPackage& req)
             return resp;
         }
     }
+    return resp;
+#else
+    // This implementation of the parser is straight forward. 
+    // Simpler to understand and has better performance
+    if (req.command == UCDProtocol::Command::SEARCH) 
+    {
+        if (req.format == UCDProtocol::PayloadFormat::STRING)
+        {
+            // We still don't need to make things version compatible
+            // It should be done here
+            // ex.: if (req.version < 10)
+            resp = v1_search_string_cb(req.payloadSize, req.payload);
+        }
+
+    } else
+    if (req.command == UCDProtocol::Command::LOAD_DICT_FROM_PAULO_CSV) 
+    {
+        resp = v1_load_from_file(req.payloadSize, req.payload);
+    }
+#endif
+
     return resp;
 }

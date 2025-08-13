@@ -30,16 +30,25 @@ SOFTWARE.
 #include "DictManager.hpp"
 #include "PaulosCSVParser.hpp"
 
-/*
+/**
  * The target for this class was study callbacks (std::function and lambda),
  * inheritage and the decorator design patter, that end-up not being 
  * implemented here.
-*/
+ * 
+ * The main idea is to slice the protocol with the fields, each message 
+ * has a set of fields and when them all matches you have an unique 
+ * action that the system must do. In this implementation all 'roots'
+ * of the message to be parsed are in a vector, that must be iterate 
+ * to get all roots. So, the root points to the next slice that must 
+ * match its field with the messages' field, and so on, until it reaches
+ * the last slice that contains the callback that executes the action.
+ */
+#ifdef MORE_COMPLEXITY_PLEASE
 class UCDProtocolSlice {
     private:
-    std::shared_ptr<UCDProtocolSlice> nextSlice;
-    std::function<bool(const UCDPackage&)> comparingFieldsCB = nullptr;
-    std::function<UCDPackage(const unsigned int& size, const std::vector<char>& payload)> callBack = nullptr;        
+        std::shared_ptr<UCDProtocolSlice> nextSlice;
+        std::function<bool(const UCDPackage&)> comparingFieldsCB = nullptr;
+        std::function<UCDPackage(const unsigned int& size, const std::vector<char>& payload)> callBack = nullptr;        
     public:
         UCDProtocolSlice(std::function<bool(const UCDPackage&)> comparingFieldsCallBack) : comparingFieldsCB(comparingFieldsCallBack)  {}
         virtual ~UCDProtocolSlice() = default;
@@ -51,6 +60,7 @@ class UCDProtocolSlice {
 
         UCDPackage execCallback(const UCDPackage& pkg)
         {
+            UCD_LOGGER(LOG_DEBUG, "Executing call back");
             return callBack(pkg.payloadSize, pkg.payload);            
         }
 
@@ -97,7 +107,7 @@ class UCDProtocolSlice {
         std::shared_ptr<UCDProtocolSlice> addSlice(UCDProtocol::PayloadFormat format)
         {
             auto myComparison = [format](const UCDPackage &pkg) -> bool {
-                UCD_LOGGER(LOG_DEBUG, "Entered payload format slice");
+                UCD_LOGGER(LOG_DEBUG, "Entered payload format slice, value:");
                 return (pkg.format == format);
             };
             auto slice =std::make_shared<UCDProtocolSlice>( myComparison);
@@ -138,10 +148,13 @@ class UCDProtocolSlice {
             return slice;
         }
 };
+#endif
 
 class ProtocolParserServer {
     private:
+#ifdef MORE_COMPLEXITY_PLEASE
     std::vector<std::shared_ptr<UCDProtocolSlice>> rootProtocolSlices;
+#endif
     public:
     ProtocolParserServer();
     ~ProtocolParserServer();

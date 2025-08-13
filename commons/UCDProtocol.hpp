@@ -46,7 +46,7 @@ class UCDProtocol {
 public:
     UCDProtocol() {};
     ~UCDProtocol() {};
-
+#ifdef MORE_COMPLEXITY_PLEASE
     /**
      * The override of the operator is a way to make
      */
@@ -109,7 +109,48 @@ public:
         Response(u_int8_t v = NONE) : value(v) {}
         operator u_int8_t() const { return value; }
     };
+#else
 
+    const u_int32_t version = 1;
+
+    enum class PayloadFormat {
+        VOID,
+        STRING,
+        JSON,
+        CBON,
+        MESSAGE_PACK,
+        FILE,
+        NONE
+    };
+
+    enum class Command {
+        SEARCH,
+        ADD,
+        LOAD_DICT_FROM_FILE,
+        LOAD_DICT_FROM_URL,
+        LOAD_DICT_FROM_PAULO_CSV,
+        DROP_DB,
+        RESPONSE,
+        NONE
+    };
+
+    enum class LoadOptions {
+        ADD_MISSING,
+        OVERRIDE,
+        DROP_DB_BEFORE_LOAD,
+        NONE
+    };
+
+    enum class Response {
+        SUCCESS,
+        MULTIPLE_MATCHES,
+        WORD_NOT_FOUND,
+        FAIL,
+        VOID,
+        NONE
+    };
+
+#endif
 };
 
 class UCDPackage {
@@ -117,7 +158,11 @@ class UCDPackage {
     UCDPackage(){};
     ~UCDPackage(){};
 
+#ifdef MORE_COMPLEXITY_PLEASE
     UCDProtocol::Version version;
+#else
+    u_int32_t version;
+#endif
     UCDProtocol::Command command;
     UCDProtocol::Response response;
     UCDProtocol::PayloadFormat format;
@@ -141,16 +186,13 @@ class UCDPackage {
         command = UCDProtocol::Command(static_cast<u_int8_t>(obj["command"].as_int64()));
         response = static_cast<UCDProtocol::Response>(obj["response"].as_int64());
         format = static_cast<UCDProtocol::PayloadFormat>(obj["format"].as_int64());
+#ifdef MORE_COMPLEXITY_PLEASE
         version = static_cast<UCDProtocol::Version>(obj["version"].as_int64());
+#else
+        version = static_cast<u_int32_t>(obj["version"].as_int64());
+#endif
         payloadSize = obj["payloadSize"].as_int64();
         std::string payloadStr = obj["payload"].as_string().c_str();
         payload.assign(payloadStr.begin(), payloadStr.end());
     }
 };
-
-
-// class UCDProtocolParser {
-//     private:
-//     public:
-//     UCDProtocolParser
-// };

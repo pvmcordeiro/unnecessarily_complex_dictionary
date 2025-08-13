@@ -28,7 +28,7 @@ SOFTWARE.
 int main() {
     try {
         UCDLogger::getInstance()->enableStdoutPrint(true);
-        UCDLogger::getInstance()->updateOutputVerbosity(LOG_DEBUG);
+        // UCDLogger::getInstance()->updateOutputVerbosity(LOG_DEBUG);
         UCD_LOGGER(LOG_INFO, "Starting application");
 
         WorkerControler controler;
@@ -37,6 +37,7 @@ int main() {
     
     } catch (const std::exception& e) {
         UCD_LOGGER(LOG_CRIT, "Fatal error: " + std::string(e.what()));
+        return 1;
     }
     return 0;
 }

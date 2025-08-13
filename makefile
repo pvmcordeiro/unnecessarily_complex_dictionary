@@ -20,10 +20,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+# To compile this code with more complexities use: 
+# make EXTRA_FLAGS="-DMORE_COMPLEXITY_PLEASE" 
+# This will complie a protocol parser for the server, which is more complex
+# than the current configuration 
+
 # Compiler and flags
+EXTRA_FLAGS ?=
+
 CXX = g++
-CXXFLAGS = -std=c++17 -g -O0 -Wall
+CXXFLAGS = -std=c++17 -g -O0 -Wall $(EXTRA_FLAGS)
 LDFLAGS = -lboost_system -lpthread -lboost_json
+
 
 # Output binary name
 TARGET = ucd
